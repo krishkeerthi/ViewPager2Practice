@@ -2,6 +2,7 @@ package com.example.viewpager2
 
 import android.app.Activity
 import android.content.ContentValues.TAG
+import android.graphics.Canvas
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -10,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TableLayout
 import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.example.viewpager2.databinding.FragmentHomeBinding
@@ -36,6 +38,7 @@ class FragmentHome : Fragment() {
 
         val viewPager = binding.viewPager2
         viewPager.adapter = collectionAdapter
+        // Viewpager swipes use transaction add,
 
         val tabLayout = binding.tabLayout
         // default tab mode fixed others are scroll, auto
@@ -50,7 +53,22 @@ class FragmentHome : Fragment() {
             // unregister during landscape orientation
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback)
 
+            viewPager.isUserInputEnabled = false
+            // if false set -> then dragging not possible, but clicking the tabs is possible to switch
         }
+
+        // off screen page limit
+
+        Toast.makeText(requireContext(), "Offscreen page limit: ${viewPager.offscreenPageLimit}", Toast.LENGTH_SHORT).show()
+        //Log.d(TAG, "onViewCreated: offscreen ${ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT}")
+        // by default offScreenPagelimit is -1 i.e ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT
+        // offscreenPageLimit cant be 0
+
+        // ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT
+        // calculate views efficiently and detaches when out of screen and reattaches when came back
+        viewPager.offscreenPageLimit = 1
+        // this prepares the adjacent pages to start state, when the page is reached it just resumes,
+        // those invisible tabs are not destroyed(both sides) like OFFSCREEN_PAGE_LIMIT_DEFAULT.
 
         // Page transformer
         viewPager.setPageTransformer(DepthPageTransformer())
@@ -61,6 +79,55 @@ class FragmentHome : Fragment() {
         // Layout direction
 //        viewPager.layoutDirection = ViewPager2.LAYOUT_DIRECTION_RTL
 //        tabLayout.layoutDirection = ViewPager2.LAYOUT_DIRECTION_RTL
+
+
+        // recyclerview item decoration
+        val itemDecoration = object: RecyclerView.ItemDecoration() {
+            override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+                super.onDraw(c, parent, state)
+                Log.d(TAG, "onDraw: item decoration ")
+            }
+        }
+        val itemDecoration1 = object: RecyclerView.ItemDecoration() {
+            override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+                super.onDraw(c, parent, state)
+                Log.d(TAG, "onDraw: item decoration 1")
+            }
+        }
+        viewPager.addItemDecoration(itemDecoration)
+        viewPager.addItemDecoration(itemDecoration1, 1) //index – Position in the decoration
+        // chain to insert this decoration at.
+
+        viewPager.removeItemDecorationAt(1)
+        viewPager.removeItemDecoration(itemDecoration)
+
+        viewPager.invalidateItemDecorations()
+        // not understood
+        //Invalidates all ItemDecorations. If ViewPager2 has item decorations,
+        // calling this method will trigger a requestLayout() call.
+
+//        Log.d(TAG, "onViewCreated: item decoration at 0 : ${viewPager.getItemDecorationAt(0)}")
+//        Log.d(TAG, "onViewCreated: item decoration at 1 : ${viewPager.getItemDecorationAt(1)}")
+
+        Log.d(TAG, "onViewCreated: item decoration count ${viewPager.itemDecorationCount}")
+
+        // scrolling orientation
+        Log.d(TAG, "onViewCreated: negative scrolling: ${viewPager.canScrollHorizontally(-1) }")
+        Log.d(TAG, "onViewCreated: positive scrolling: ${viewPager.canScrollHorizontally(1) }")
+        // checks whether scrolling in the given direction possible
+        // direction – Negative to check scrolling left, positive to check scrolling right.
+        //true if this view can be scrolled in the specified direction, false otherwise.
+
+        //negative = up , positive = down
+        Log.d(TAG, "onViewCreated: negative scrolling: ${viewPager.canScrollVertically(-1) }")
+        Log.d(TAG, "onViewCreated: positive scrolling: ${viewPager.canScrollVertically(1)}")
+
+        // fake drag
+//        if(!viewPager.isFakeDragging)
+//            viewPager.beginFakeDrag()
+//        viewPager.fakeDragBy(50F)
+//        viewPager.endFakeDrag()
+//        viewPager.isFakeDragging
 
 
         // Mediator
@@ -78,11 +145,13 @@ class FragmentHome : Fragment() {
 
         // viewpager methods
 
-        if(viewPager.currentItem == 0){
-            //viewPager.setCurrentItem(4) // programmatic scrolling no dragging state
-                // default scrolling is smooth
-            viewPager.setCurrentItem(4, false) // directly goes to specified position
-        }
+//        if(viewPager.currentItem == 0){
+//            //viewPager.setCurrentItem(4) // programmatic scrolling no dragging state
+//                // default scrolling is smooth
+//            //viewPager.setCurrentItem(4, true) // directly goes to specified position
+//            // Important: On smooth scroll all fragment involved in scrolling is called
+//            // smoothscroll false: only the specific page(fragment) lifecycle is called
+//        }
 
 
     }
@@ -144,10 +213,10 @@ class FragmentHome : Fragment() {
                 0 -> FragmentLeft()
                 1 -> FragmentMiddle()
                 2 -> FragmentRight()
-                3 -> FragmentRight()
-                4 -> FragmentRight()
-                5 -> FragmentRight()
-                else -> FragmentMiddle()
+                3 -> FragmentExtra()
+                4 -> FragmentExtra()
+                5 -> FragmentExtra()
+                else -> FragmentExtra()
             }
         }
     }
